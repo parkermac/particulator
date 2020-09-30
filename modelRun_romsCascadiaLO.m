@@ -44,7 +44,8 @@ classdef modelRun_romsCascadiaLO < modelRun
  				dirname = modelDir;
                 % build subdir from scratch (HBS)
                 yr = year;
-                date = datenum(yr,01,01):datenum(yr,12,31);
+                % date = datenum(yr,01,01):datenum(yr,12,31);
+                date = datenum(yr,07,04):datenum(yr,07,05);
                 formatOut = 'yyyy/mm/dd';
                 date = datestr(date,formatOut);
                 date = string(date);
