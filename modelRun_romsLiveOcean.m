@@ -1,36 +1,22 @@
-classdef modelRun_romsCascadiaLO < modelRun
+classdef modelRun_romsLiveOcean < modelRun
 
-	% for working with output from MoSSea and Cascadia (PNWTOX) runs.
+	% for working with output from LiveOcean runs.
 	% assumes a stretched Cartesian grid, and one output frame per file
-	% (the _filestep_ property isn't used yet).
-	%
-	% unlike older code like 'post_tools' which was built around the snctools
-	% for reading netcdfs, this code, using matlab's native netcdf library,
-	% returns variables with dimensions [lon lat depth], in that order.
-	% accordingly, calls to interp2 for 2D variables look like
-	% 	interp2(y,x,H,yi,xi)
-	% and calls to interpn for 3D variables look like
-	%	interpn(x,y,sigma,S,xi,yi,sigmai)
-	% interpolation in time is done by interpolating in (x,y,sigma) at each of 
-	% the currently two loaded frames and then interpolating in 1D in time 
-	% between the results.
+	% with files organized in 1-day folders.
 
 	properties
 		filename % list of files where output is stored 
 		filestep % if more than one model time is stored per file,
 				 % which index (for PNWTOX-era runs, this is just 1)
 		F0, F1	 % two frames of in-memory storage
-        dtIn, dtOut           % input and output time steps (in days)
 		outOfBoundsValue;
 	end
 	
 	methods
 	
-		function run = modelRun_romsCascadiaLO(arg1,modelDir,year,dtOut)
+		function run = modelRun_romsLiveOcean(modelDir, datenum1, datenum2)
 
-            % added year for subdirectory building - HBS, 04/23/20
             % built filename list by hand (ocean_his files) - HBS, 04/30/20
-            % added dtOut to use par_integrate time averaging - HBS,04/29/20
             
 			run.outOfBoundsValue = 0; % set this to nan to have interp
 									  % functions fail obviously, 0 to have
@@ -38,72 +24,46 @@ classdef modelRun_romsCascadiaLO < modelRun
 
 			% assemble file list
             
-			if strcmpi(arg1,'LO') || strcmpi(arg1,'LiveOcean') %Comparing strings
-				% LiveOcean format
-% 				% find the subdirectories in the base directory given as a second argument
- 				dirname = modelDir;
-                % build subdir from scratch (HBS)
-                yr = year;
-                % date = datenum(yr,01,01):datenum(yr,12,31);
-                date = datenum(yr,07,04):datenum(yr,07,05);
-                formatOut = 'yyyy/mm/dd';
-                date = datestr(date,formatOut);
-                date = string(date);
-                for i = 1:length(date)
-                    date(i) = strrep(date(i),'/','.');
-                end
-                subdir = strcat('f',date);
-                file1 = {'/ocean_his_0001.nc';'/ocean_his_0002.nc';'/ocean_his_0003.nc';'/ocean_his_0004.nc';'/ocean_his_0005.nc';...
-                    '/ocean_his_0006.nc';'/ocean_his_0007.nc';'/ocean_his_0008.nc';'/ocean_his_0009.nc';'/ocean_his_0010.nc';...
-                    '/ocean_his_0011.nc';'/ocean_his_0012.nc';'/ocean_his_0013.nc';'/ocean_his_0014.nc';'/ocean_his_0015.nc';...
-                    '/ocean_his_0016.nc';'/ocean_his_0017.nc';'/ocean_his_0018.nc';'/ocean_his_0019.nc';'/ocean_his_0020.nc';...
-                    '/ocean_his_0021.nc';'/ocean_his_0022.nc';'/ocean_his_0023.nc';'/ocean_his_0024.nc';'/ocean_his_0025.nc'};
-                file2 = {'/ocean_his_0002.nc';'/ocean_his_0003.nc';'/ocean_his_0004.nc';'/ocean_his_0005.nc';...
-                    '/ocean_his_0006.nc';'/ocean_his_0007.nc';'/ocean_his_0008.nc';'/ocean_his_0009.nc';'/ocean_his_0010.nc';...
-                    '/ocean_his_0011.nc';'/ocean_his_0012.nc';'/ocean_his_0013.nc';'/ocean_his_0014.nc';'/ocean_his_0015.nc';...
-                    '/ocean_his_0016.nc';'/ocean_his_0017.nc';'/ocean_his_0018.nc';'/ocean_his_0019.nc';'/ocean_his_0020.nc';...
-                    '/ocean_his_0021.nc';'/ocean_his_0022.nc';'/ocean_his_0023.nc';'/ocean_his_0024.nc';'/ocean_his_0025.nc'};
-                subfilenames1 = string(file1);
-                subfilenames2 = string(file2);
-     
-				% for each subdirectory, assemble filenames <---work on this section and assemble own subdir list
-				run.filename = {};
-				for i=1:length(subdir) %changed from length(subdirs)
-                    if i==1
-                        for j=1:length(subfilenames1)
-                            run.filename = cat(1,run.filename,[dirname subdir{i} subfilenames1{j}]);
-                        end
-                    else
-                        for j=1:length(subfilenames2)
-                            run.filename = cat(1,run.filename,[dirname subdir{i} subfilenames2{j}]);
-                        end
+            % LiveOcean format
+ 			% find the subdirectories in the base directory given as a second argument
+            dirname = modelDir;
+            % build subdir from scratch (HBS)
+            date = datenum1:datenum2;
+            formatOut = 'yyyy/mm/dd';
+            date = datestr(date,formatOut);
+            date = string(date);
+            for i = 1:length(date)
+                date(i) = strrep(date(i),'/','.');
+            end
+            subdir = strcat('f',date);
+            file1 = {'/ocean_his_0001.nc';'/ocean_his_0002.nc';'/ocean_his_0003.nc';'/ocean_his_0004.nc';'/ocean_his_0005.nc';...
+                '/ocean_his_0006.nc';'/ocean_his_0007.nc';'/ocean_his_0008.nc';'/ocean_his_0009.nc';'/ocean_his_0010.nc';...
+                '/ocean_his_0011.nc';'/ocean_his_0012.nc';'/ocean_his_0013.nc';'/ocean_his_0014.nc';'/ocean_his_0015.nc';...
+                '/ocean_his_0016.nc';'/ocean_his_0017.nc';'/ocean_his_0018.nc';'/ocean_his_0019.nc';'/ocean_his_0020.nc';...
+                '/ocean_his_0021.nc';'/ocean_his_0022.nc';'/ocean_his_0023.nc';'/ocean_his_0024.nc';'/ocean_his_0025.nc'};
+            file2 = {'/ocean_his_0002.nc';'/ocean_his_0003.nc';'/ocean_his_0004.nc';'/ocean_his_0005.nc';...
+                '/ocean_his_0006.nc';'/ocean_his_0007.nc';'/ocean_his_0008.nc';'/ocean_his_0009.nc';'/ocean_his_0010.nc';...
+                '/ocean_his_0011.nc';'/ocean_his_0012.nc';'/ocean_his_0013.nc';'/ocean_his_0014.nc';'/ocean_his_0015.nc';...
+                '/ocean_his_0016.nc';'/ocean_his_0017.nc';'/ocean_his_0018.nc';'/ocean_his_0019.nc';'/ocean_his_0020.nc';...
+                '/ocean_his_0021.nc';'/ocean_his_0022.nc';'/ocean_his_0023.nc';'/ocean_his_0024.nc';'/ocean_his_0025.nc'};
+            subfilenames1 = string(file1);
+            subfilenames2 = string(file2);
+
+            % for each subdirectory, assemble filenames <---work on this section and assemble own subdir list
+            run.filename = {};
+            for i=1:length(subdir) %changed from length(subdirs)
+                if i==1
+                    for j=1:length(subfilenames1)
+                        run.filename = cat(1,run.filename,[dirname subdir{i} subfilenames1{j}]);
+                    end
+                else
+                    for j=1:length(subfilenames2)
+                        run.filename = cat(1,run.filename,[dirname subdir{i} subfilenames2{j}]);
                     end
                 end
-				run.numFrames = length(run.filename);
-				run.filestep = ones(run.numFrames,1);
-                run.dtIn = [1,1/24]; %Line added to use the time averaging code in par_integrate
-                % Also: add output time step
-                run.dtOut = run.dtIn;
-                try
-                    run.dtOut(:,2) = dtOut;
-                catch
-                    % same output as input time step
-                end
-			else
-				% one flat list of files, as for the Cascadia runs before LiveOcean
-				dirname = arg1;
-				if nargin > 1, warning('only expecting one input argument.'); end
-				thefiles = dir([dirname 'ocean_his_*.nc']);
-				run.filename = {thefiles.name};
-				if isempty(run.filename)
-					warning(['no files found at ' dirname 'ocean_his_*.nc']);
-				end
-				run.numFrames = length(run.filename);
-				run.filestep = ones(run.numFrames,1);
-				for i=1:run.numFrames
-					run.filename{i} = [dirname run.filename{i}];
-				end
-			end
+            end
+            run.numFrames = length(run.filename);
+            run.filestep = ones(run.numFrames,1);
 			
 			% look in first and last files to get times
 			nc = netcdf.open(run.filename{1},'NOWRITE');
@@ -210,7 +170,7 @@ classdef modelRun_romsCascadiaLO < modelRun
 			run.F1.zeta(run.F1.zeta > 1e36) = 0;
 			for i=1:length(tracers)
 				% bad tracer values could simply be set to nan...
-%				run.F1.(tracers{i})(run.F1.(tracers{i}) > 1e36) = nan;
+				% run.F1.(tracers{i})(run.F1.(tracers{i}) > 1e36) = nan;
 				% ... however, this causes interpolation problems when particles
 				% are within one grid cell of the land. Filling in land values
 				% with a nearest-neighbour interpolation once here means that
@@ -231,10 +191,8 @@ classdef modelRun_romsCascadiaLO < modelRun
 			run.loadedN(1) = run.loadedN(2);
 			run.loadFrame(n,tracers);
 		end
-		
-		
+				
 		% interpolating model variables ----------------------------------------
-
 
 		function c = interp(run,name,x,y,sigma,t);
 			% warning: either here or in run.loadFrame(), have to deal with the
@@ -318,9 +276,7 @@ classdef modelRun_romsCascadiaLO < modelRun
 					 run.grid.(gr).cs, run.F1.(name), xx, yy, vv);
 				c = run.tinterp(t, c0, c1);
 			end			
-		end
-		
-		
+        end
 		
 		function us = scaleU(run,u,x,y); % m/s -> deg lon per day
 			us = u .* 86400 ./ 111325 ./ cos(y./180.*pi);
@@ -331,8 +287,7 @@ classdef modelRun_romsCascadiaLO < modelRun
 		function ws = scaleW(run,w);
 			ws = w .* 86400; % m/s -> m/day
 		end
-		
-		
+			
 		function isin = in_xy_bounds(run,x,y);
 			isin = x >= run.grid.bounds(1) & x <= run.grid.bounds(2) & ...
 				   y >= run.grid.bounds(3) & y <= run.grid.bounds(4);

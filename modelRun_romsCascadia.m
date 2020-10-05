@@ -32,6 +32,11 @@ classdef modelRun_romsCascadia < modelRun
 									  
 			% assemble file list
 			if strcmpi(arg1,'LO') || strcmpi(arg1,'LiveOcean')
+                
+                % NOTE: I don't think this section is working yet.
+                % see modelRun_romsLiveOcean.m instead.
+                % --- Parker MacCready 2020.09.30 ---
+                
 				% LiveOcean format
 				% find the subdirectories in the base directory given as a second argument
 				dirname = arg2;
